@@ -51,6 +51,7 @@ import com.metrolist.music.ui.screens.artist.ArtistSongsScreen
 import com.metrolist.music.ui.screens.library.LibraryScreen
 import com.metrolist.music.ui.screens.playlist.AutoPlaylistScreen
 import com.metrolist.music.ui.screens.playlist.LocalPlaylistScreen
+import com.metrolist.music.ui.screens.playlist.LocalMusicPlaylistScreen
 import com.metrolist.music.ui.screens.playlist.OnlinePlaylistScreen
 import com.metrolist.music.ui.screens.playlist.TopPlaylistScreen
 import com.metrolist.music.ui.screens.playlist.CachePlaylistScreen
@@ -264,6 +265,11 @@ fun NavGraphBuilder.navigationBuilder(
         ),
     ) {
         TopPlaylistScreen(navController, scrollBehavior)
+    }
+    composable(
+        route = "local_music_playlist"
+    ) {
+        LocalMusicPlaylistScreen(navController)
     }
     composable(
         route = "youtube_browse/{browseId}?params={params}",
