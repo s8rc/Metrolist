@@ -3,6 +3,7 @@ package com.metrolist.music.ui.screens.library
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -28,6 +29,7 @@ fun LibraryScreen(navController: NavController) {
                     LibraryFilter.SONGS to stringResource(R.string.filter_songs),
                     LibraryFilter.ALBUMS to stringResource(R.string.filter_albums),
                     LibraryFilter.ARTISTS to stringResource(R.string.filter_artists),
+                    LibraryFilter.LOCAL_MUSIC to stringResource(R.string.local_music),
                 ),
                 currentValue = filterType,
                 onValueUpdate = {
@@ -60,6 +62,11 @@ fun LibraryScreen(navController: NavController) {
             LibraryFilter.ARTISTS -> LibraryArtistsScreen(
                 navController,
                 { filterType = LibraryFilter.LIBRARY })
+
+            LibraryFilter.LOCAL_MUSIC -> LocalMusicScreen(
+                navController,
+                TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+            )
         }
     }
 }

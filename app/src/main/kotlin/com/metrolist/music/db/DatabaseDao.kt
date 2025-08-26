@@ -31,6 +31,8 @@ import com.metrolist.music.db.entities.ArtistEntity
 import com.metrolist.music.db.entities.Event
 import com.metrolist.music.db.entities.EventWithSong
 import com.metrolist.music.db.entities.FormatEntity
+import com.metrolist.music.db.entities.LocalMusicEntity
+import com.metrolist.music.db.entities.LocalMusicPlaylistEntity
 import com.metrolist.music.db.entities.LyricsEntity
 import com.metrolist.music.db.entities.Playlist
 import com.metrolist.music.db.entities.PlaylistEntity
@@ -1328,4 +1330,75 @@ interface DatabaseDao {
     fun checkpoint() {
         raw("PRAGMA wal_checkpoint(FULL)".toSQLiteQuery())
     }
+
+    // Local Music DAO methods
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(localMusic: LocalMusicEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(localMusic: List<LocalMusicEntity>)
+
+    @Update
+    suspend fun update(localMusic: LocalMusicEntity)
+
+    @Delete
+    suspend fun delete(localMusic: LocalMusicEntity)
+
+    @Query("SELECT * FROM local_music WHERE isAvailable = 1 ORDER BY artist ASC, album ASC, track ASC")
+    fun getAllLocalMusic(): Flow<List<LocalMusicEntity>>
+
+    @Query("SELECT * FROM local_music WHERE id = :id")
+    suspend fun getLocalMusicById(id: String): LocalMusicEntity?
+
+    @Query("SELECT * FROM local_music WHERE mediaStoreId = :mediaStoreId")
+    suspend fun getLocalMusicByMediaStoreId(mediaStoreId: Long): LocalMusicEntity?
+
+    @Query("SELECT * FROM local_music WHERE filePath = :filePath")
+    suspend fun getLocalMusicByPath(filePath: String): LocalMusicEntity?
+
+    @Query("SELECT * FROM local_music WHERE artist = :artist ORDER BY album ASC, track ASC")
+    fun getLocalMusicByArtist(artist: String): Flow<List<LocalMusicEntity>>
+
+    @Query("SELECT * FROM local_music WHERE album = :album ORDER BY track ASC")
+    fun getLocalMusicByAlbum(album: String): Flow<List<LocalMusicEntity>>
+
+    @Query("SELECT DISTINCT artist FROM local_music WHERE isAvailable = 1 ORDER BY artist ASC")
+    fun getAllLocalArtists(): Flow<List<String>>
+
+    @Query("SELECT DISTINCT album FROM local_music WHERE isAvailable = 1 ORDER BY album ASC")
+    fun getAllLocalAlbums(): Flow<List<String>>
+
+    @Query("SELECT * FROM local_music WHERE liked = 1 AND isAvailable = 1 ORDER BY likedDate DESC")
+    fun getLikedLocalMusic(): Flow<List<LocalMusicEntity>>
+
+    @Query("UPDATE local_music SET isAvailable = 0 WHERE filePath = :filePath")
+    suspend fun markLocalMusicUnavailable(filePath: String)
+
+    @Query("UPDATE local_music SET isAvailable = 1 WHERE filePath = :filePath")
+    suspend fun markLocalMusicAvailable(filePath: String)
+
+    @Query("DELETE FROM local_music WHERE isAvailable = 0")
+    suspend fun deleteUnavailableLocalMusic()
+
+    // Local Music Playlist DAO methods
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(playlistEntry: LocalMusicPlaylistEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllPlaylistEntries(playlistEntries: List<LocalMusicPlaylistEntity>)
+
+    @Delete
+    suspend fun delete(playlistEntry: LocalMusicPlaylistEntity)
+
+    @Query("DELETE FROM local_music_playlist")
+    suspend fun clearLocalMusicPlaylist()
+
+    @Query("SELECT lm.* FROM local_music lm INNER JOIN local_music_playlist lmp ON lm.id = lmp.localMusicId WHERE lm.isAvailable = 1 ORDER BY lmp.position ASC")
+    fun getLocalMusicPlaylist(): Flow<List<LocalMusicEntity>>
+
+    @Query("SELECT COUNT(*) FROM local_music_playlist lmp INNER JOIN local_music lm ON lmp.localMusicId = lm.id WHERE lm.isAvailable = 1")
+    suspend fun getLocalMusicPlaylistSize(): Int
+
+    @Query("SELECT MAX(position) FROM local_music_playlist")
+    suspend fun getMaxPlaylistPosition(): Int?
 }
