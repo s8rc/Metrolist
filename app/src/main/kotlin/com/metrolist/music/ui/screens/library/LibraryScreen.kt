@@ -31,7 +31,6 @@ fun LibraryScreen(navController: NavController) {
                     LibraryFilter.SONGS to stringResource(R.string.filter_songs),
                     LibraryFilter.ALBUMS to stringResource(R.string.filter_albums),
                     LibraryFilter.ARTISTS to stringResource(R.string.filter_artists),
-                    LibraryFilter.LOCAL_MUSIC to stringResource(R.string.local_music),
                 ),
                 currentValue = filterType,
                 onValueUpdate = {
@@ -64,11 +63,6 @@ fun LibraryScreen(navController: NavController) {
             LibraryFilter.ARTISTS -> LibraryArtistsScreen(
                 navController,
                 { filterType = LibraryFilter.LIBRARY })
-
-            LibraryFilter.LOCAL_MUSIC -> LocalMusicScreen(
-                navController,
-                TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-            )
         }
     }
 }

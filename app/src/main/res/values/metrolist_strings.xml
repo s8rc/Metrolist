@@ -108,6 +108,7 @@
     <string name="show_downloaded_playlist">Show \"Downloaded\" playlist</string>
     <string name="show_top_playlist">Show \"Top\" playlist</string>
     <string name="show_cached_playlist">Show \"Cached\" playlist</string>
+    <string name="show_local_music_playlist">Show \"Local Music\" playlist</string>
 
     <string name="google">Google</string>
     <string name="discord">Discord</string>

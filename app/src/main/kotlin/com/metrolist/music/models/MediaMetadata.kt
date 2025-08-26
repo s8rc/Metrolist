@@ -119,7 +119,7 @@ fun LocalMusicFile.toMediaMetadata() =
             title = album
         ),
         isLocal = true,
-        localPath = filePath
+        localPath = if (filePath.startsWith("file://")) filePath else "file://$filePath"
     )
 
 fun LocalMusicEntity.toMediaMetadata() =
@@ -141,5 +141,5 @@ fun LocalMusicEntity.toMediaMetadata() =
         liked = liked,
         likedDate = likedDate,
         isLocal = true,
-        localPath = filePath
+        localPath = if (filePath.startsWith("file://")) filePath else "file://$filePath"
     )

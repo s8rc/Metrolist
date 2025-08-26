@@ -53,7 +53,7 @@ fun MediaMetadata.toMediaItem() =
     MediaItem
         .Builder()
         .setMediaId(id)
-        .setUri(id)
+        .setUri(if (isLocal && !localPath.isNullOrBlank()) localPath else id)
         .setCustomCacheKey(id)
         .setTag(this)
         .setMediaMetadata(
