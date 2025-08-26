@@ -33,9 +33,11 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -71,11 +73,14 @@ import com.metrolist.music.ui.component.IconButton
 import com.metrolist.music.ui.component.LocalMenuState
 import com.metrolist.music.ui.component.SongListItem
 import com.metrolist.music.ui.component.SortHeader
+import com.metrolist.music.ui.menu.SelectionSongMenu
 import com.metrolist.music.ui.menu.SongMenu
 import com.metrolist.music.ui.utils.ItemWrapper
 import com.metrolist.music.utils.rememberEnumPreference
 import com.metrolist.music.utils.rememberPreference
 import com.metrolist.music.viewmodels.LocalMusicViewModel
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import kotlinx.coroutines.launch
 
 enum class LocalMusicSortType {
@@ -124,15 +129,15 @@ fun LocalMusicScreen(
     
     // Sorting and filtering preferences
     val (sortType, onSortTypeChange) = rememberEnumPreference(
-        key = "local_music_sort_type",
+        key = stringPreferencesKey("local_music_sort_type"),
         defaultValue = LocalMusicSortType.TITLE
     )
     val (sortDescending, onSortDescendingChange) = rememberPreference(
-        key = "local_music_sort_descending", 
+        key = booleanPreferencesKey("local_music_sort_descending"), 
         defaultValue = false
     )
     val (filter, onFilterChange) = rememberEnumPreference(
-        key = "local_music_filter",
+        key = stringPreferencesKey("local_music_filter"),
         defaultValue = LocalMusicFilter.ALL
     )
 
@@ -175,7 +180,9 @@ fun LocalMusicScreen(
         if (sortDescending) sorted.reversed() else sorted
     }
 
-    val wrappedSongs = sortedSongs.map { ItemWrapper(it) }.toMutableList()
+    val wrappedSongs = remember(sortedSongs) {
+        sortedSongs.map { ItemWrapper(it) }
+    }.toMutableList()
 
     // Back handler for search
     if (isSearching) {
@@ -395,6 +402,23 @@ fun LocalMusicScreen(
                                         contentDescription = null
                                     )
                                 }
+                                IconButton(
+                                    onClick = {
+                                        menuState.show {
+                                            SelectionSongMenu(
+                                                songSelection = wrappedSongs.filter { it.isSelected }
+                                                    .map { it.item.toSong() },
+                                                onDismiss = menuState::dismiss,
+                                                clearAction = { selection = false }
+                                            )
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.more_vert),
+                                        contentDescription = null
+                                    )
+                                }
                             }
                         } else {
                             // Normal header with play controls
@@ -522,13 +546,15 @@ fun LocalMusicScreen(
                                 sortDescending = sortDescending,
                                 onSortTypeChange = onSortTypeChange,
                                 onSortDescendingChange = onSortDescendingChange,
-                                sortTypeText = when (sortType) {
-                                    LocalMusicSortType.TITLE -> "Title"
-                                    LocalMusicSortType.ARTIST -> "Artist"
-                                    LocalMusicSortType.ALBUM -> "Album"
-                                    LocalMusicSortType.DURATION -> "Duration"
-                                    LocalMusicSortType.DATE_ADDED -> "Date Added"
-                                    LocalMusicSortType.TRACK_NUMBER -> "Track"
+                                sortTypeText = { sortType ->
+                                    when (sortType) {
+                                        LocalMusicSortType.TITLE -> R.string.sort_by_name
+                                        LocalMusicSortType.ARTIST -> R.string.sort_by_artist
+                                        LocalMusicSortType.ALBUM -> R.string.albums
+                                        LocalMusicSortType.DURATION -> R.string.sort_by_length
+                                        LocalMusicSortType.DATE_ADDED -> R.string.sort_by_create_date
+                                        LocalMusicSortType.TRACK_NUMBER -> R.string.sort_by_song_count
+                                    }
                                 }
                             )
                         }
@@ -536,28 +562,31 @@ fun LocalMusicScreen(
 
                     // Song list
                     itemsIndexed(
-                        items = if (isSearching || selection) wrappedSongs else wrappedSongs,
-                        key = { _, song -> song.item.id }
+                        items = wrappedSongs,
+                        key = { _, song -> song.item.id },
+                        contentType = { _, _ -> CONTENT_TYPE_SONG }
                     ) { index, song ->
                         SongListItem(
                             song = song.item.toSong(),
                             isActive = song.item.id == mediaMetadata?.id,
                             isPlaying = isPlaying,
+                            isSelected = song.isSelected && selection,
                             trailingContent = {
-                                if (selection) {
+                                if (!selection) {
                                     IconButton(
-                                        onClick = { song.isSelected = !song.isSelected }
+                                        onClick = {
+                                            menuState.show {
+                                                SongMenu(
+                                                    originalSong = song.item.toSong(),
+                                                    navController = navController,
+                                                    onDismiss = menuState::dismiss
+                                                )
+                                            }
+                                        }
                                     ) {
                                         Icon(
-                                            painter = painterResource(
-                                                if (song.isSelected) R.drawable.check_circle else R.drawable.radio_button_unchecked
-                                            ),
-                                            contentDescription = null,
-                                            tint = if (song.isSelected) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                            }
+                                            painter = painterResource(R.drawable.more_vert),
+                                            contentDescription = null
                                         )
                                     }
                                 }
@@ -576,7 +605,7 @@ fun LocalMusicScreen(
                                                 val mediaMetadataList = sortedSongs.map { it.toMediaMetadata() }
                                                 playerConnection.playQueue(
                                                     LocalMusicQueue(
-                                                                title = "Local Music",
+                                                        title = "Local Music",
                                                         items = mediaMetadataList,
                                                         startIndex = index
                                                     )
@@ -588,10 +617,12 @@ fun LocalMusicScreen(
                                         if (!selection) {
                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                             selection = true
+                                            wrappedSongs.forEach { it.isSelected = false }
                                             song.isSelected = true
                                         }
                                     }
                                 )
+                                .animateItem()
                         )
                     }
                 }
