@@ -129,6 +129,13 @@ interface DatabaseDao {
     @Query("SELECT * FROM song WHERE liked ORDER BY totalPlayTime")
     fun likedSongsByPlayTimeAsc(): Flow<List<Song>>
 
+    @Transaction
+    @Query("SELECT * FROM song WHERE isLocal = 1 ORDER BY title")
+    fun localSongs(): List<Song>
+
+    @Query("DELETE FROM song WHERE isLocal = 1")
+    fun clearLocalSongs()
+
     fun likedSongs(
         sortType: SongSortType,
         descending: Boolean,

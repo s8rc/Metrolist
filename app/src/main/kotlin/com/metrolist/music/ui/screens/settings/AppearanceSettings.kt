@@ -68,6 +68,7 @@ import com.metrolist.music.constants.ShowLikedPlaylistKey
 import com.metrolist.music.constants.ShowDownloadedPlaylistKey
 import com.metrolist.music.constants.ShowTopPlaylistKey
 import com.metrolist.music.constants.ShowCachedPlaylistKey
+import com.metrolist.music.constants.ShowLocalMusicPlaylistKey
 import com.metrolist.music.constants.SwipeThumbnailKey
 import com.metrolist.music.constants.SwipeSensitivityKey
 import com.metrolist.music.constants.SwipeToSongKey
@@ -174,6 +175,10 @@ fun AppearanceSettings(
     )
     val (showCachedPlaylist, onShowCachedPlaylistChange) = rememberPreference(
         ShowCachedPlaylistKey,
+        defaultValue = true
+    )
+    val (showLocalMusicPlaylist, onShowLocalMusicPlaylistChange) = rememberPreference(
+        ShowLocalMusicPlaylistKey,
         defaultValue = true
     )
 
@@ -642,6 +647,13 @@ fun AppearanceSettings(
             icon = { Icon(painterResource(R.drawable.cached), null) },
             checked = showCachedPlaylist,
             onCheckedChange = onShowCachedPlaylistChange
+        )
+
+        SwitchPreference(
+            title = { Text(stringResource(R.string.show_local_music_playlist)) },
+            icon = { Icon(painterResource(R.drawable.library_music), null) },
+            checked = showLocalMusicPlaylist,
+            onCheckedChange = onShowLocalMusicPlaylistChange
         )
     }
 
