@@ -87,15 +87,15 @@ class LocalMusicRepository @Inject constructor(
         }
 
     /**
-     * Get hardcoded local music playlist
+     * Get all local music files
      */
-    fun getLocalMusicPlaylist(): Flow<List<LocalMusicEntity>> = database.getLocalMusicPlaylist()
+    fun getLocalMusicPlaylist(): Flow<List<LocalMusicEntity>> = database.getAllLocalMusic()
 
     /**
-     * Get hardcoded local music playlist as MediaMetadata
+     * Get all local music files as MediaMetadata
      */
     fun getLocalMusicPlaylistAsMediaMetadata(): Flow<List<MediaMetadata>> = 
-        database.getLocalMusicPlaylist().map { entities ->
+        database.getAllLocalMusic().map { entities ->
             entities.map { it.toMediaMetadata() }
         }
 

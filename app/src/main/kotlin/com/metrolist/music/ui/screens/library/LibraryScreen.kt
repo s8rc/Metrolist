@@ -15,6 +15,7 @@ import com.metrolist.music.R
 import com.metrolist.music.constants.ChipSortTypeKey
 import com.metrolist.music.constants.LibraryFilter
 import com.metrolist.music.ui.component.ChipsRow
+import com.metrolist.music.ui.screens.library.LocalMusicScreen
 import com.metrolist.music.utils.rememberEnumPreference
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,27 +24,21 @@ fun LibraryScreen(navController: NavController) {
     var filterType by rememberEnumPreference(ChipSortTypeKey, LibraryFilter.LIBRARY)
 
     val filterContent = @Composable {
-        Row {
-            ChipsRow(
-                chips =
-                listOf(
-                    LibraryFilter.PLAYLISTS to stringResource(R.string.filter_playlists),
-                    LibraryFilter.SONGS to stringResource(R.string.filter_songs),
-                    LibraryFilter.ALBUMS to stringResource(R.string.filter_albums),
-                    LibraryFilter.ARTISTS to stringResource(R.string.filter_artists),
-                ),
-                currentValue = filterType,
-                onValueUpdate = {
-                    filterType =
-                        if (filterType == it) {
-                            LibraryFilter.LIBRARY
-                        } else {
-                            it
-                        }
-                },
-                modifier = Modifier.weight(1f),
-            )
-        }
+        ChipsRow(
+            chips = listOf(
+                LibraryFilter.LIBRARY to stringResource(R.string.filter_library),
+                LibraryFilter.SONGS to stringResource(R.string.filter_songs),
+                LibraryFilter.ARTISTS to stringResource(R.string.filter_artists),
+                LibraryFilter.ALBUMS to stringResource(R.string.filter_albums),
+                LibraryFilter.PLAYLISTS to stringResource(R.string.filter_playlists),
+                LibraryFilter.LOCAL_MUSIC to stringResource(R.string.filter_local_music),
+            ),
+            currentValue = filterType,
+            onValueUpdate = {
+                filterType = it
+            },
+            modifier = Modifier
+        )
     }
 
     Box(
@@ -63,6 +58,11 @@ fun LibraryScreen(navController: NavController) {
             LibraryFilter.ARTISTS -> LibraryArtistsScreen(
                 navController,
                 { filterType = LibraryFilter.LIBRARY })
+
+            LibraryFilter.LOCAL_MUSIC -> LocalMusicScreen(
+                navController,
+                filterContent
+            )
         }
     }
 }

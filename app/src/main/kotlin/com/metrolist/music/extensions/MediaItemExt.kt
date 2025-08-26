@@ -49,11 +49,13 @@ fun SongItem.toMediaItem() =
                 .build(),
         ).build()
 
-fun MediaMetadata.toMediaItem() =
-    MediaItem
+fun MediaMetadata.toMediaItem(): MediaItem {
+    val uri = if (isLocal && !localPath.isNullOrBlank()) localPath else id
+    android.util.Log.d("MediaItemExt", "Creating MediaItem: id=$id, isLocal=$isLocal, localPath=$localPath, uri=$uri")
+    return MediaItem
         .Builder()
         .setMediaId(id)
-        .setUri(if (isLocal && !localPath.isNullOrBlank()) localPath else id)
+        .setUri(uri)
         .setCustomCacheKey(id)
         .setTag(this)
         .setMediaMetadata(
@@ -67,3 +69,4 @@ fun MediaMetadata.toMediaItem() =
                 .setMediaType(MEDIA_TYPE_MUSIC)
                 .build(),
         ).build()
+}
