@@ -29,6 +29,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -136,7 +137,7 @@ fun LocalMusicScreen(
             if (!hasPermission) {
                 item {
                     EmptyPlaceholder(
-                        icon = R.drawable.folder,
+                        icon = R.drawable.music_note,
                         text = stringResource(R.string.local_music_permission_required)
                     )
                 }
