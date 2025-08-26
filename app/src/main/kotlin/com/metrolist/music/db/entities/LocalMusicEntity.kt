@@ -110,7 +110,9 @@ data class LocalMusicEntity(
         val albumEntity = if (album.isNotBlank()) {
             AlbumEntity(
                 id = "local_album_$albumId",
-                title = album
+                title = album,
+                songCount = 1, // We don't track album song counts for local music
+                duration = (duration / 1000).toInt() // Convert milliseconds to seconds
             )
         } else null
         

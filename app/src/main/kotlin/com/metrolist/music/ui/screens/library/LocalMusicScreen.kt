@@ -19,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton as Material3IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -88,7 +89,7 @@ fun LocalMusicScreen(
                 )
             },
             actions = {
-                IconButton(
+                Material3IconButton(
                     onClick = {
                         isScanning = true
                         coroutineScope.launch {
@@ -201,7 +202,8 @@ fun LocalMusicScreen(
                                             items = localMusic.map { it.toMediaMetadata() }
                                         )
                                     )
-                                }
+                                },
+                                onLongClick = { /* No action for long click */ }
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.play),
@@ -217,7 +219,8 @@ fun LocalMusicScreen(
                                             items = localMusic.map { it.toMediaMetadata() }.shuffled()
                                         )
                                     )
-                                }
+                                },
+                                onLongClick = { /* No action for long click */ }
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.shuffle),
@@ -258,7 +261,8 @@ fun LocalMusicScreen(
                                                 onDismiss = menuState::dismiss
                                             )
                                         }
-                                    }
+                                    },
+                                    onLongClick = { /* No action for long click */ }
                                 ) {
                                     Icon(
                                         painter = painterResource(R.drawable.more_vert),
