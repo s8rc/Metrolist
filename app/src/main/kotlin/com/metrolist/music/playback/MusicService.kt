@@ -1164,22 +1164,30 @@ class MusicService :
 
     private fun handleLocalMusicFile(mediaId: String, dataSpec: androidx.media3.datasource.DataSpec): androidx.media3.datasource.DataSpec {
         // Get the local music file path from database
+        android.util.Log.d("MusicService", "handleLocalMusicFile: mediaId=$mediaId")
         val localMusicEntity = runBlocking(Dispatchers.IO) {
             database.getLocalMusicById(mediaId)
         }
+        android.util.Log.d("MusicService", "Found localMusicEntity: ${localMusicEntity?.title} at ${localMusicEntity?.filePath}")
         
         if (localMusicEntity != null && localMusicEntity.isAvailable) {
             // Check if file still exists
             val file = File(localMusicEntity.filePath)
+            android.util.Log.d("MusicService", "File exists: ${file.exists()}, canRead: ${file.canRead()}, path: ${file.absolutePath}")
             if (file.exists() && file.canRead()) {
                 // Return DataSpec with file URI
-                return dataSpec.withUri(file.toUri())
+                val fileUri = file.toUri()
+                android.util.Log.d("MusicService", "Returning file URI: $fileUri")
+                return dataSpec.withUri(fileUri)
             } else {
+                android.util.Log.e("MusicService", "File not accessible: ${file.absolutePath}")
                 // Mark file as unavailable
                 scope.launch(Dispatchers.IO) {
                     database.markLocalMusicUnavailable(localMusicEntity.filePath)
                 }
             }
+        } else {
+            android.util.Log.e("MusicService", "LocalMusicEntity not found or not available for mediaId: $mediaId")
         }
         
         // If we get here, the local file is not available

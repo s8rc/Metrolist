@@ -168,10 +168,18 @@ fun LocalMusicScreen(
                         ) {
                             IconButton(
                                 onClick = {
+                                    android.util.Log.d("LocalMusicScreen", "Playing ${localMusic.size} local music files")
+                                    localMusic.forEach { entity ->
+                                        android.util.Log.d("LocalMusicScreen", "Local music: id=${entity.id}, title=${entity.title}, filePath=${entity.filePath}")
+                                    }
+                                    val mediaMetadataList = localMusic.map { it.toMediaMetadata() }
+                                    mediaMetadataList.forEach { metadata ->
+                                        android.util.Log.d("LocalMusicScreen", "MediaMetadata: id=${metadata.id}, title=${metadata.title}, isLocal=${metadata.isLocal}, localPath=${metadata.localPath}")
+                                    }
                                     playerConnection.playQueue(
                                         LocalMusicQueue(
                                             title = "Local Music",
-                                            items = localMusic.map { it.toMediaMetadata() }
+                                            items = mediaMetadataList
                                         )
                                     )
                                 },
@@ -185,10 +193,12 @@ fun LocalMusicScreen(
 
                             IconButton(
                                 onClick = {
+                                    android.util.Log.d("LocalMusicScreen", "Shuffling ${localMusic.size} local music files")
+                                    val mediaMetadataList = localMusic.map { it.toMediaMetadata() }.shuffled()
                                     playerConnection.playQueue(
                                         LocalMusicQueue(
                                             title = "Local Music",
-                                            items = localMusic.map { it.toMediaMetadata() }.shuffled()
+                                            items = mediaMetadataList
                                         )
                                     )
                                 },
