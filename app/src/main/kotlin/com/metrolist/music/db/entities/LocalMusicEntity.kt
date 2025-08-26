@@ -95,4 +95,29 @@ data class LocalMusicEntity(
     fun markAvailable(): LocalMusicEntity {
         return copy(isAvailable = true)
     }
+    
+    /**
+     * Convert to Song for compatibility with UI components
+     */
+    fun toSong(): Song {
+        // Create minimal ArtistEntity for local music
+        val artistEntity = ArtistEntity(
+            id = "local_artist_${artist.hashCode()}",
+            name = artist
+        )
+        
+        // Create minimal AlbumEntity for local music if album exists
+        val albumEntity = if (album.isNotBlank()) {
+            AlbumEntity(
+                id = "local_album_$albumId",
+                title = album
+            )
+        } else null
+        
+        return Song(
+            song = toSongEntity(),
+            artists = listOf(artistEntity),
+            album = albumEntity
+        )
+    }
 }

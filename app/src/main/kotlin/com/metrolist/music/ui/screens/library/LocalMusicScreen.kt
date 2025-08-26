@@ -19,7 +19,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -39,9 +38,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.metrolist.music.LocalPlayerAwareWindowInsets
@@ -108,7 +105,7 @@ fun LocalMusicScreen(
                         )
                     } else {
                         Icon(
-                            painter = painterResource(R.drawable.refresh),
+                            painter = painterResource(R.drawable.sync),
                             contentDescription = stringResource(R.string.scan_local_music)
                         )
                     }
@@ -242,11 +239,12 @@ fun LocalMusicScreen(
                         items = localMusic,
                         key = { _, song -> song.id },
                         contentType = { _, _ -> CONTENT_TYPE_SONG }
-                    ) { index, song ->
-                        val metadata = song.toMediaMetadata()
+                    ) { index, localMusicEntity ->
+                        val metadata = localMusicEntity.toMediaMetadata()
+                        val song = localMusicEntity.toSong()
                         
                         SongListItem(
-                            song = metadata,
+                            song = song,
                             isActive = metadata.id == mediaMetadata?.id,
                             isPlaying = isPlaying,
                             showInLibraryIcon = false,
@@ -255,7 +253,7 @@ fun LocalMusicScreen(
                                     onClick = {
                                         menuState.show {
                                             SongMenu(
-                                                originalSong = metadata,
+                                                originalSong = song,
                                                 navController = navController,
                                                 onDismiss = menuState::dismiss
                                             )
@@ -289,14 +287,13 @@ fun LocalMusicScreen(
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         menuState.show {
                                             SongMenu(
-                                                originalSong = metadata,
+                                                originalSong = song,
                                                 navController = navController,
                                                 onDismiss = menuState::dismiss
                                             )
                                         }
                                     }
                                 )
-                                .animateItemPlacement()
                         )
                     }
                 }
