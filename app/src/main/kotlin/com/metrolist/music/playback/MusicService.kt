@@ -12,6 +12,7 @@ import android.media.AudioFocusRequest
 import android.media.AudioAttributes as LegacyAudioAttributes
 import android.media.audiofx.AudioEffect
 import android.net.ConnectivityManager
+import android.net.Uri
 import android.os.Binder
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
@@ -47,8 +48,15 @@ import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 import androidx.media3.extractor.ExtractorsFactory
+import androidx.media3.extractor.avi.AviExtractor
+import androidx.media3.extractor.flac.FlacExtractor
 import androidx.media3.extractor.mkv.MatroskaExtractor
+import androidx.media3.extractor.mp3.Mp3Extractor
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
+import androidx.media3.extractor.mp4.Mp4Extractor
+import androidx.media3.extractor.ogg.OggExtractor
+import androidx.media3.extractor.ts.AdtsExtractor
+import androidx.media3.extractor.wav.WavExtractor
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaController
@@ -1033,6 +1041,20 @@ class MusicService :
 
     override fun onPlayerError(error: PlaybackException) {
         super.onPlayerError(error)
+        
+        // Enhanced logging for local file playback errors
+        val currentMediaItem = player.currentMediaItem
+        val isLocalFile = currentMediaItem?.mediaId?.startsWith("local_") == true
+        
+        android.util.Log.e("MusicService", "Player error occurred: ${error.message}")
+        android.util.Log.e("MusicService", "Error code: ${error.errorCode}")
+        android.util.Log.e("MusicService", "Current media: ${currentMediaItem?.mediaId}")
+        android.util.Log.e("MusicService", "Is local file: $isLocalFile")
+        if (isLocalFile) {
+            android.util.Log.e("MusicService", "Local file URI: ${currentMediaItem?.requestMetadata?.mediaUri}")
+        }
+        android.util.Log.e("MusicService", "Error cause: ${error.cause}")
+        
         val isConnectionError = (error.cause?.cause is PlaybackException) &&
                 (error.cause?.cause as PlaybackException).errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
 
@@ -1077,6 +1099,7 @@ class MusicService :
 
             // Handle local music files
             if (mediaId.startsWith("local_")) {
+                android.util.Log.d("MusicService", "DataSourceFactory: Processing local file with mediaId=$mediaId")
                 return@Factory handleLocalMusicFile(mediaId, dataSpec)
             }
 
@@ -1175,8 +1198,14 @@ class MusicService :
             val file = File(localMusicEntity.filePath)
             android.util.Log.d("MusicService", "File exists: ${file.exists()}, canRead: ${file.canRead()}, path: ${file.absolutePath}")
             if (file.exists() && file.canRead()) {
-                // Return DataSpec with file URI
-                val fileUri = file.toUri()
+                // Ensure proper file URI format
+                val fileUri = if (localMusicEntity.filePath.startsWith("file://")) {
+                    Uri.parse(localMusicEntity.filePath)
+                } else {
+                    Uri.fromFile(file)
+                }
+                android.util.Log.d("MusicService", "File size: ${file.length()} bytes")
+                android.util.Log.d("MusicService", "File MIME type detection needed for: ${file.name}")
                 android.util.Log.d("MusicService", "Returning file URI: $fileUri")
                 return dataSpec.withUri(fileUri)
             } else {
@@ -1202,7 +1231,17 @@ class MusicService :
         DefaultMediaSourceFactory(
             createDataSourceFactory(),
             ExtractorsFactory {
-                arrayOf(MatroskaExtractor(), FragmentedMp4Extractor())
+                arrayOf(
+                    Mp3Extractor(), // MP3 support for local music
+                    Mp4Extractor(), // MP4 support  
+                    FragmentedMp4Extractor(), // Fragmented MP4 support
+                    AdtsExtractor(), // AAC/ADTS support
+                    FlacExtractor(), // FLAC support for high-quality audio
+                    OggExtractor(), // OGG Vorbis support
+                    WavExtractor(), // WAV support
+                    AviExtractor(), // AVI support (can contain audio)
+                    MatroskaExtractor() // Matroska/WebM support
+                )
             },
         )
 
