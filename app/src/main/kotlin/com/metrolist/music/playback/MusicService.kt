@@ -16,6 +16,7 @@ import android.os.Binder
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.datastore.preferences.core.edit
+import java.io.File
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -1074,6 +1075,11 @@ class MusicService :
         return ResolvingDataSource.Factory(createCacheDataSource()) { dataSpec ->
             val mediaId = dataSpec.key ?: error("No media id")
 
+            // Handle local music files
+            if (mediaId.startsWith("local_")) {
+                return@Factory handleLocalMusicFile(mediaId, dataSpec)
+            }
+
             if (downloadCache.isCached(
                     mediaId,
                     dataSpec.position,
@@ -1154,6 +1160,34 @@ class MusicService :
                 return@Factory dataSpec.withUri(streamUrl.toUri()).subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
             }
         }
+    }
+
+    private fun handleLocalMusicFile(mediaId: String, dataSpec: androidx.media3.datasource.DataSpec): androidx.media3.datasource.DataSpec {
+        // Get the local music file path from database
+        val localMusicEntity = runBlocking(Dispatchers.IO) {
+            database.getLocalMusicById(mediaId)
+        }
+        
+        if (localMusicEntity != null && localMusicEntity.isAvailable) {
+            // Check if file still exists
+            val file = File(localMusicEntity.filePath)
+            if (file.exists() && file.canRead()) {
+                // Return DataSpec with file URI
+                return dataSpec.withUri(file.toUri())
+            } else {
+                // Mark file as unavailable
+                scope.launch(Dispatchers.IO) {
+                    database.markLocalMusicUnavailable(localMusicEntity.filePath)
+                }
+            }
+        }
+        
+        // If we get here, the local file is not available
+        throw PlaybackException(
+            getString(R.string.error_local_file_not_found, localMusicEntity?.title ?: mediaId),
+            null,
+            PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND
+        )
     }
 
     private fun createMediaSourceFactory() =

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import com.metrolist.innertube.models.SongItem
 import com.metrolist.music.db.entities.Song
 import com.metrolist.music.db.entities.SongEntity
+import com.metrolist.music.db.entities.LocalMusicEntity
 import com.metrolist.music.ui.utils.resize
 import java.io.Serializable
 import java.time.LocalDateTime
@@ -21,6 +22,8 @@ data class MediaMetadata(
     val liked: Boolean = false,
     val likedDate: LocalDateTime? = null,
     val inLibrary: LocalDateTime? = null,
+    val isLocal: Boolean = false,
+    val localPath: String? = null,
 ) : Serializable {
     data class Artist(
         val id: String?,
@@ -44,6 +47,7 @@ data class MediaMetadata(
             liked = liked,
             likedDate = likedDate,
             inLibrary = inLibrary,
+            isLocal = isLocal,
         )
 }
 
@@ -96,4 +100,46 @@ fun SongItem.toMediaMetadata() =
         },
         explicit = explicit,
         setVideoId = setVideoId
+    )
+
+fun LocalMusicFile.toMediaMetadata() =
+    MediaMetadata(
+        id = "local_$id",
+        title = title,
+        artists = listOf(
+            MediaMetadata.Artist(
+                id = null,
+                name = artist
+            )
+        ),
+        duration = (duration / 1000).toInt(), // Convert milliseconds to seconds
+        thumbnailUrl = albumArtUri?.toString(),
+        album = MediaMetadata.Album(
+            id = "local_album_$albumId",
+            title = album
+        ),
+        isLocal = true,
+        localPath = filePath
+    )
+
+fun LocalMusicEntity.toMediaMetadata() =
+    MediaMetadata(
+        id = id,
+        title = title,
+        artists = listOf(
+            MediaMetadata.Artist(
+                id = null,
+                name = artist
+            )
+        ),
+        duration = (duration / 1000).toInt(), // Convert milliseconds to seconds
+        thumbnailUrl = albumArtUri,
+        album = MediaMetadata.Album(
+            id = "local_album_$albumId",
+            title = album
+        ),
+        liked = liked,
+        likedDate = likedDate,
+        isLocal = true,
+        localPath = filePath
     )

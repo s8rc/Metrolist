@@ -340,4 +340,13 @@
     <string name="new_version_available">New version available</string>
     <string name="translation_models">Translation Models</string>
     <string name="clear_translation_models">Clear translation models</string>
+    
+    <!-- Local Music Strings -->
+    <string name="error_local_file_not_found">Local music file not found: %s</string>
+    <string name="local_music">Local Music</string>
+    <string name="scan_local_music">Scan Local Music</string>
+    <string name="local_music_scanned">Found %d local music files</string>
+    <string name="local_music_permission_required">Storage permission required to access local music</string>
+    <string name="no_local_music_found">No local music found</string>
+    <string name="grant_permission">Grant Permission</string>
 </resources>

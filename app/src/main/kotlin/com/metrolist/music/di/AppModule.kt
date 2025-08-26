@@ -8,6 +8,7 @@ import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import com.metrolist.music.constants.MaxSongCacheSizeKey
 import com.metrolist.music.db.InternalDatabase
+import com.metrolist.music.db.LocalMusicRepository
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.utils.dataStore
 import com.metrolist.music.utils.get
@@ -35,6 +36,13 @@ object AppModule {
     fun provideDatabase(
         @ApplicationContext context: Context,
     ): MusicDatabase = InternalDatabase.newInstance(context)
+
+    @Singleton
+    @Provides
+    fun provideLocalMusicRepository(
+        database: MusicDatabase,
+        @ApplicationContext context: Context,
+    ): LocalMusicRepository = LocalMusicRepository(database, context)
 
     @Singleton
     @Provides
