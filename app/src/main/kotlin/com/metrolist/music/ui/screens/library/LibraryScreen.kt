@@ -61,7 +61,7 @@ fun LibraryScreen(navController: NavController) {
 
             LibraryFilter.LOCAL_MUSIC -> LocalMusicScreen(
                 navController,
-                TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+                filterContent
             )
         }
     }

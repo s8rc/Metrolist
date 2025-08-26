@@ -44,7 +44,9 @@ data class LocalMusicFile(
             album = MediaMetadata.Album(
                 id = "local_album_$albumId",
                 title = album
-            )
+            ),
+            isLocal = true,
+            localPath = if (filePath.startsWith("file://")) filePath else "file://$filePath"
         )
     }
     

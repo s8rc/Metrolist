@@ -61,7 +61,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LocalMusicScreen(
     navController: NavController,
-    scrollBehavior: TopAppBarScrollBehavior,
+    filterContent: @Composable () -> Unit,
     viewModel: LocalMusicViewModel = hiltViewModel(),
 ) {
     val haptic = LocalHapticFeedback.current
@@ -79,42 +79,7 @@ fun LocalMusicScreen(
 
     var isScanning by rememberSaveable { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = {
-                Text(
-                    text = stringResource(R.string.local_music),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            actions = {
-                Material3IconButton(
-                    onClick = {
-                        isScanning = true
-                        coroutineScope.launch {
-                            viewModel.scanLocalMusic()
-                            isScanning = false
-                        }
-                    },
-                    enabled = hasPermission && !isScanning
-                ) {
-                    if (isScanning) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Icon(
-                            painter = painterResource(R.drawable.sync),
-                            contentDescription = stringResource(R.string.scan_local_music)
-                        )
-                    }
-                }
-            },
-            scrollBehavior = scrollBehavior
-        )
-
+    Box(modifier = Modifier.fillMaxSize()) {
         when {
             !hasPermission -> {
                 Box(
@@ -185,6 +150,13 @@ fun LocalMusicScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     item(
+                        key = "filter",
+                        contentType = CONTENT_TYPE_HEADER
+                    ) {
+                        filterContent()
+                    }
+
+                    item(
                         key = "header",
                         contentType = CONTENT_TYPE_HEADER
                     ) {
@@ -233,8 +205,32 @@ fun LocalMusicScreen(
                             Text(
                                 text = "${localMusic.size} ${stringResource(R.string.songs)}",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f)
                             )
+
+                            Material3IconButton(
+                                onClick = {
+                                    isScanning = true
+                                    coroutineScope.launch {
+                                        viewModel.scanLocalMusic()
+                                        isScanning = false
+                                    }
+                                },
+                                enabled = hasPermission && !isScanning
+                            ) {
+                                if (isScanning) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(
+                                        painter = painterResource(R.drawable.sync),
+                                        contentDescription = stringResource(R.string.scan_local_music)
+                                    )
+                                }
+                            }
                         }
                     }
 
