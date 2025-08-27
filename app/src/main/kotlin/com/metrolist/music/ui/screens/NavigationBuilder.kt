@@ -269,7 +269,7 @@ fun NavGraphBuilder.navigationBuilder(
     composable(
         route = "local_music_playlist"
     ) {
-        LocalMusicPlaylistScreen(navController)
+        LocalMusicPlaylistScreen(navController, scrollBehavior)
     }
     composable(
         route = "youtube_browse/{browseId}?params={params}",
