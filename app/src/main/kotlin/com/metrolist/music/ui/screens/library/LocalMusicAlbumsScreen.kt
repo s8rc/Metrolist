@@ -212,7 +212,7 @@ fun LocalMusicAlbumItem(
                 modifier = Modifier
                     .size(56.dp)
                     .clip(RoundedCornerShape(8.dp)),
-                placeholder = R.drawable.album
+                placeholder = painterResource(R.drawable.album)
             )
             
             Spacer(Modifier.width(16.dp))
