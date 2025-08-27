@@ -78,6 +78,7 @@ enum class LocalMusicFilter {
 fun LocalMusicScreen(
     navController: NavController,
     filterContent: @Composable () -> Unit,
+    onExitLocalMusic: () -> Unit = {},
     viewModel: LocalMusicViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -142,12 +143,12 @@ fun LocalMusicScreen(
                         label = { Text(stringResource(R.string.local_music)) },
                         selected = true,
                         colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.surface),
-                        onClick = { /* This is handled by filterContent */ },
+                        onClick = { onExitLocalMusic() },
                         shape = RoundedCornerShape(16.dp),
                         leadingIcon = {
                             Icon(
                                 painter = painterResource(R.drawable.close),
-                                contentDescription = ""
+                                contentDescription = stringResource(R.string.close)
                             )
                         },
                     )
