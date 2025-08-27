@@ -105,14 +105,14 @@ fun LocalMusicScreen(
         val filtered = when (filter) {
             LocalMusicFilter.ALL -> localMusic
             LocalMusicFilter.FAVORITES -> localMusic.filter { it.liked }
-            LocalMusicFilter.RECENT -> localMusic.sortedByDescending { it.dateScanned }.take(50)
+            LocalMusicFilter.RECENT -> localMusic.sortedByDescending { it.dateModified }.take(50)
         }
         
         val sorted = when (sortType) {
-            SongSortType.CREATE_DATE -> filtered.sortedBy { it.dateScanned }
-            SongSortType.NAME -> filtered.sortedBy { it.title }
-            SongSortType.ARTIST -> filtered.sortedBy { it.artist }
-            SongSortType.PLAY_TIME -> filtered.sortedBy { it.playCount }
+            SongSortType.CREATE_DATE -> filtered.sortedBy { it.dateModified }
+            SongSortType.NAME -> filtered.sortedBy { it.title.lowercase() }
+            SongSortType.ARTIST -> filtered.sortedBy { it.artist.lowercase() }
+            SongSortType.PLAY_TIME -> filtered.sortedBy { it.duration }
         }
         
         if (sortDescending) sorted.reversed() else sorted

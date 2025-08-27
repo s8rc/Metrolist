@@ -124,10 +124,10 @@ fun LocalMusicPlaylistScreen(
 
     val wrappedSongs = remember(localMusic, sortType, sortDescending) {
         val sortedSongs = when (sortType) {
-            SongSortType.CREATE_DATE -> localMusic.sortedBy { it.dateScanned }
-            SongSortType.NAME -> localMusic.sortedBy { it.title }
-            SongSortType.ARTIST -> localMusic.sortedBy { it.artist }
-            SongSortType.PLAY_TIME -> localMusic.sortedBy { it.playCount }
+            SongSortType.CREATE_DATE -> localMusic.sortedBy { it.dateModified }
+            SongSortType.NAME -> localMusic.sortedBy { it.title.lowercase() }
+            SongSortType.ARTIST -> localMusic.sortedBy { it.artist.lowercase() }
+            SongSortType.PLAY_TIME -> localMusic.sortedBy { it.duration }
         }.let { if (sortDescending) it.reversed() else it }
 
         sortedSongs.map { song -> ItemWrapper(song) }
