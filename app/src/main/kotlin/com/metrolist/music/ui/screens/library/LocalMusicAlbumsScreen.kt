@@ -49,6 +49,8 @@ import com.metrolist.music.playback.queues.ListQueue
 import com.metrolist.music.ui.component.EmptyPlaceholder
 import com.metrolist.music.viewmodels.LocalMusicViewModel
 import coil3.compose.AsyncImage
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 data class LocalMusicAlbum(
     val name: String,
@@ -168,13 +170,10 @@ fun LocalMusicAlbumsScreen(
                     LocalMusicAlbumItem(
                         album = album,
                         onClick = {
-                            // Create a playlist from the album songs and play it
-                            playerConnection.playQueue(
-                                ListQueue(
-                                    title = album.name,
-                                    items = album.songs.map { it.toSong().toMediaItem() }
-                                )
-                            )
+                            // Navigate to the local music album page with URL encoding
+                            val encodedAlbumName = URLEncoder.encode(album.name, StandardCharsets.UTF_8.toString())
+                            val encodedArtistName = URLEncoder.encode(album.artist, StandardCharsets.UTF_8.toString())
+                            navController.navigate("local_album/$encodedAlbumName/$encodedArtistName")
                         },
                         modifier = Modifier.animateItem()
                     )
