@@ -46,21 +46,61 @@ import com.metrolist.music.R
 import com.metrolist.music.constants.CONTENT_TYPE_HEADER
 import com.metrolist.music.extensions.toMediaItem
 import com.metrolist.music.playback.queues.ListQueue
+import com.metrolist.music.ui.component.ChipsRow
 import com.metrolist.music.ui.component.EmptyPlaceholder
+import com.metrolist.music.ui.component.SortHeader
 import com.metrolist.music.viewmodels.LocalMusicViewModel
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.metrolist.music.utils.rememberEnumPreference
+import com.metrolist.music.utils.rememberPreference
 import coil3.compose.AsyncImage
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+
+enum class LocalAlbumSortType {
+    NAME,
+    ARTIST,
+    YEAR,
+    SONG_COUNT
+}
+
+enum class LocalAlbumFilter {
+    ALL,
+    REGULAR_ALBUMS,
+    COMPILATIONS
+}
+
+/**
+ * Normalize album names to handle slight variations
+ * This helps group albums that might have minor differences in naming
+ */
+private fun normalizeAlbumName(albumName: String): String {
+    return albumName.trim()
+        .lowercase()
+        .replace(Regex("\\s+"), " ") // Normalize whitespace
+        .replace(Regex("[()\\[\\]{}]"), "") // Remove brackets/parentheses
+        .replace(Regex("[-_]"), " ") // Convert dashes/underscores to spaces
+        .replace("remaster", "")
+        .replace("remastered", "")
+        .replace("deluxe edition", "")
+        .replace("deluxe", "")
+        .replace("special edition", "")
+        .replace("expanded edition", "")
+        .trim()
+}
 
 data class LocalMusicAlbum(
     val name: String,
     val artist: String,
     val songs: List<com.metrolist.music.db.entities.LocalMusicEntity>,
-    val albumArtUri: String? = null
+    val albumArtUri: String? = null,
+    val isCompilation: Boolean = false
 ) {
     val songCount: Int get() = songs.size
     val totalDuration: Long get() = songs.sumOf { it.duration }
     val year: Int get() = songs.maxOfOrNull { it.year } ?: 0
+    val uniqueArtists: List<String> get() = songs.map { it.artist }.distinct()
+    val displayArtist: String get() = if (isCompilation) "Various Artists" else artist
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -75,22 +115,83 @@ fun LocalMusicAlbumsScreen(
     val playerConnection = LocalPlayerConnection.current ?: return
 
     val allLocalMusic by viewModel.allLocalMusic.collectAsState()
+    
+    // Sorting preferences
+    val (sortType, onSortTypeChange) = rememberEnumPreference(
+        stringPreferencesKey("local_album_sort_type"),
+        LocalAlbumSortType.NAME
+    )
+    val (sortDescending, onSortDescendingChange) = rememberPreference(
+        stringPreferencesKey("local_album_sort_descending"),
+        false
+    )
+    
+    // Filter preferences
+    val (albumFilter, onAlbumFilterChange) = rememberEnumPreference(
+        stringPreferencesKey("local_album_filter"),
+        LocalAlbumFilter.ALL
+    )
 
-    // Group local music by album
-    val localAlbums by remember {
+    // Group local music by album with enhanced discovery
+    val localAlbums by remember(allLocalMusic, sortType, sortDescending, albumFilter) {
         derivedStateOf {
-            allLocalMusic
+            val groupedAlbums = allLocalMusic
                 .filter { it.album.isNotBlank() }
-                .groupBy { it.album to it.artist }
-                .map { (albumArtist, songs) ->
+                .groupBy { normalizeAlbumName(it.album) } // Group by normalized album name
+                .mapNotNull { (normalizedAlbumName, songs) ->
+                    if (songs.isEmpty()) return@mapNotNull null
+                    
+                    val uniqueArtists = songs.map { it.artist.trim() }.distinct().filter { it.isNotBlank() }
+                    val artistCounts = songs.groupBy { it.artist.trim() }.mapValues { it.value.size }
+                    
+                    // Enhanced compilation detection
+                    val isCompilation = when {
+                        uniqueArtists.size >= 4 -> true // 4+ artists is definitely compilation
+                        uniqueArtists.size >= 3 && artistCounts.values.all { it <= 2 } -> true // 3+ artists with few tracks each
+                        songs.any { it.artist.contains("feat.", ignoreCase = true) || 
+                                   it.artist.contains("ft.", ignoreCase = true) } -> false // Featured artists don't make it compilation
+                        else -> false
+                    }
+                    
+                    // Determine the primary artist for the album
+                    val primaryArtist = when {
+                        isCompilation -> "Various Artists"
+                        uniqueArtists.size == 1 -> uniqueArtists.first()
+                        else -> {
+                            // Find the artist with the most tracks in this album
+                            artistCounts.maxByOrNull { it.value }?.key ?: uniqueArtists.first()
+                        }
+                    }
+                    
+                    // Use the original album name (not normalized) for display
+                    val displayAlbumName = songs.first().album.trim()
+                    
                     LocalMusicAlbum(
-                        name = albumArtist.first,
-                        artist = albumArtist.second,
-                        songs = songs.sortedBy { it.track },
-                        albumArtUri = songs.firstOrNull()?.albumArtUri
+                        name = displayAlbumName,
+                        artist = primaryArtist,
+                        songs = songs.sortedBy { it.track.takeIf { it > 0 } ?: Int.MAX_VALUE },
+                        albumArtUri = songs.firstOrNull { !it.albumArtUri.isNullOrBlank() }?.albumArtUri 
+                                    ?: songs.firstOrNull()?.albumArtUri,
+                        isCompilation = isCompilation
                     )
                 }
-                .sortedBy { it.name }
+            
+            // Apply filtering
+            val filteredAlbums = when (albumFilter) {
+                LocalAlbumFilter.ALL -> groupedAlbums
+                LocalAlbumFilter.REGULAR_ALBUMS -> groupedAlbums.filter { !it.isCompilation }
+                LocalAlbumFilter.COMPILATIONS -> groupedAlbums.filter { it.isCompilation }
+            }
+            
+            // Apply sorting
+            val sortedAlbums = when (sortType) {
+                LocalAlbumSortType.NAME -> filteredAlbums.sortedBy { it.name.lowercase() }
+                LocalAlbumSortType.ARTIST -> filteredAlbums.sortedBy { it.displayArtist.lowercase() }
+                LocalAlbumSortType.YEAR -> filteredAlbums.sortedBy { it.year }
+                LocalAlbumSortType.SONG_COUNT -> filteredAlbums.sortedBy { it.songCount }
+            }
+            
+            if (sortDescending) sortedAlbums.reversed() else sortedAlbums
         }
     }
 
@@ -122,7 +223,16 @@ fun LocalMusicAlbumsScreen(
                             )
                         },
                     )
-                    Spacer(Modifier.weight(1f))
+                    ChipsRow(
+                        chips = listOf(
+                            LocalAlbumFilter.ALL to "All",
+                            LocalAlbumFilter.REGULAR_ALBUMS to "Albums",
+                            LocalAlbumFilter.COMPILATIONS to "Compilations"
+                        ),
+                        currentValue = albumFilter,
+                        onValueUpdate = onAlbumFilterChange,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
 
@@ -134,10 +244,19 @@ fun LocalMusicAlbumsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
-                    Text(
-                        text = stringResource(R.string.filter_local_music_albums),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                    SortHeader(
+                        sortType = sortType,
+                        sortDescending = sortDescending,
+                        onSortTypeChange = onSortTypeChange,
+                        onSortDescendingChange = onSortDescendingChange,
+                        sortTypeText = { sortType ->
+                            when (sortType) {
+                                LocalAlbumSortType.NAME -> R.string.sort_by_name
+                                LocalAlbumSortType.ARTIST -> R.string.sort_by_artist
+                                LocalAlbumSortType.YEAR -> R.string.sort_by_year
+                                LocalAlbumSortType.SONG_COUNT -> R.string.sort_by_song_count
+                            }
+                        },
                     )
 
                     Spacer(Modifier.weight(1f))
@@ -228,7 +347,7 @@ fun LocalMusicAlbumItem(
                 )
                 
                 Text(
-                    text = album.artist,
+                    text = album.displayArtist,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -236,11 +355,13 @@ fun LocalMusicAlbumItem(
                 )
                 
                 Text(
-                    text = pluralStringResource(
-                        R.plurals.n_song,
-                        album.songCount,
-                        album.songCount
-                    ) + if (album.year > 0) " • ${album.year}" else "",
+                    text = buildString {
+                        append(pluralStringResource(R.plurals.n_song, album.songCount, album.songCount))
+                        if (album.year > 0) append(" • ${album.year}")
+                        if (album.isCompilation) {
+                            append(" • ${album.uniqueArtists.size} artists")
+                        }
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

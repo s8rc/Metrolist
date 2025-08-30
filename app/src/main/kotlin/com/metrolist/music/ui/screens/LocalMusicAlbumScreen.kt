@@ -134,7 +134,11 @@ fun LocalMusicAlbumScreen(
                             )
 
                             Text(
-                                text = info.artist,
+                                text = if (info.isCompilation && info.uniqueArtists.size > 1) {
+                                    "${info.artist} (${info.uniqueArtists.size} artists)"
+                                } else {
+                                    info.artist
+                                },
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Normal,
                                 color = MaterialTheme.colorScheme.onBackground

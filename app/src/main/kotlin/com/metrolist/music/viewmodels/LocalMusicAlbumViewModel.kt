@@ -26,9 +26,16 @@ class LocalMusicAlbumViewModel @Inject constructor(
     val albumSongs: StateFlow<List<LocalMusicEntity>> = 
         localMusicRepository.getAllLocalMusic()
             .map { allMusic ->
-                allMusic.filter { 
-                    it.album == albumName && it.artist == artistName 
-                }.sortedBy { it.track }
+                val filteredSongs = if (artistName == "Various Artists") {
+                    // For compilation albums, get all songs with this album name
+                    allMusic.filter { it.album.trim() == albumName }
+                } else {
+                    // For regular albums, filter by both album and artist
+                    allMusic.filter { 
+                        it.album.trim() == albumName && it.artist.trim() == artistName 
+                    }
+                }
+                filteredSongs.sortedBy { it.track.takeIf { it > 0 } ?: Int.MAX_VALUE }
             }
             .stateIn(
                 scope = viewModelScope,
@@ -39,13 +46,18 @@ class LocalMusicAlbumViewModel @Inject constructor(
     val albumInfo: StateFlow<LocalMusicAlbumInfo?> = 
         albumSongs.map { songs ->
             if (songs.isNotEmpty()) {
+                val uniqueArtists = songs.map { it.artist.trim() }.distinct()
+                val isCompilation = artistName == "Various Artists" || uniqueArtists.size > 2
+                
                 LocalMusicAlbumInfo(
                     name = albumName,
                     artist = artistName,
                     year = songs.maxOfOrNull { it.year } ?: 0,
                     songCount = songs.size,
                     totalDuration = songs.sumOf { it.duration },
-                    albumArtUri = songs.firstOrNull()?.albumArtUri
+                    albumArtUri = songs.firstOrNull()?.albumArtUri,
+                    isCompilation = isCompilation,
+                    uniqueArtists = uniqueArtists
                 )
             } else null
         }.stateIn(
@@ -61,5 +73,7 @@ data class LocalMusicAlbumInfo(
     val year: Int,
     val songCount: Int,
     val totalDuration: Long,
-    val albumArtUri: String?
+    val albumArtUri: String?,
+    val isCompilation: Boolean = false,
+    val uniqueArtists: List<String> = emptyList()
 )
