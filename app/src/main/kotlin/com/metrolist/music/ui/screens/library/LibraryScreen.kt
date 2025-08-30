@@ -16,6 +16,7 @@ import com.metrolist.music.constants.ChipSortTypeKey
 import com.metrolist.music.constants.LibraryFilter
 import com.metrolist.music.ui.component.ChipsRow
 import com.metrolist.music.ui.screens.library.LocalMusicScreen
+import com.metrolist.music.ui.screens.library.LocalMusicAlbumsScreen
 import com.metrolist.music.utils.rememberEnumPreference
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,6 +33,7 @@ fun LibraryScreen(navController: NavController) {
                 LibraryFilter.ALBUMS to stringResource(R.string.filter_albums),
                 LibraryFilter.PLAYLISTS to stringResource(R.string.filter_playlists),
                 LibraryFilter.LOCAL_MUSIC to stringResource(R.string.filter_local_music),
+                LibraryFilter.LOCAL_MUSIC_ALBUMS to stringResource(R.string.filter_local_music_albums),
             ),
             currentValue = filterType,
             onValueUpdate = {
@@ -61,7 +63,14 @@ fun LibraryScreen(navController: NavController) {
 
             LibraryFilter.LOCAL_MUSIC -> LocalMusicScreen(
                 navController,
-                filterContent
+                filterContent,
+                onExitLocalMusic = { filterType = LibraryFilter.LIBRARY }
+            )
+
+            LibraryFilter.LOCAL_MUSIC_ALBUMS -> LocalMusicAlbumsScreen(
+                navController,
+                filterContent,
+                onExitLocalAlbums = { filterType = LibraryFilter.LIBRARY }
             )
         }
     }
